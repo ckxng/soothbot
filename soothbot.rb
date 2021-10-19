@@ -3,7 +3,7 @@
 require 'discordrb'
 require 'yaml'
 
-bot = Discordrb::Bot.new token: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', client_id: '1111111111111111111'
+bot = Discordrb::Bot.new token: 'OTAwMDUyODgzOTE4MTY0MDkw.YW7tkQ.OmAWMEZyEK0oSFhf69ROZsQ5F74', client_id: '900052883918164090'
 
 puts "This bot's invite URL is #{bot.invite_url}."
 puts 'Click on it to invite it to your server.'
@@ -498,7 +498,7 @@ bot.message(content: '!path') do |event|
         nextcard = nil
         nextindex = (i+1)%sunlookup.length
         if path[nextindex] and (nextindex==8 or nextindex==pathindex%sunlookup.length)
-            nextcard = path[compindex]['suns']
+            nextcard = path[nextindex]['suns']
         end
 
         if i==pathindex%sunlookup.length or i==8 or nextcard == 'Companion'
