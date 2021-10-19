@@ -3,7 +3,7 @@
 require 'discordrb'
 require 'yaml'
 
-bot = Discordrb::Bot.new token: 'OTAwMDUyODgzOTE4MTY0MDkw.YW7tkQ.OmAWMEZyEK0oSFhf69ROZsQ5F74', client_id: '900052883918164090'
+bot = Discordrb::Bot.new token: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', client_id: 'XXXXXXXXXXXXXXXX'
 
 puts "This bot's invite URL is #{bot.invite_url}."
 puts 'Click on it to invite it to your server.'
