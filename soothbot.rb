@@ -448,7 +448,7 @@ bot.message(content: '!card') do |event|
         'url': card['url'],
         'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
         'image':  {
-            'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/56.png"
+            'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
         }
     }
 end
@@ -468,7 +468,7 @@ bot.message(content: '!draw') do |event|
         'url': card['url'],
         'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
         'image':  {
-            'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/56.png"
+            'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
         }
     }
 end
