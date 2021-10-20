@@ -374,45 +374,45 @@ YAML
 cardlookup = YAML.load(deck)
 deck = cardlookup[0..-1].shuffle
 mishaplookup = [
-    '',
-    'MISHAPS: 1 (Minor magical flux)',
-    'MISHAPS: 2 (Moderate magical flux)',
-    'MISHAPS: 3 (Major magical flux)'
+  '',
+  'MISHAPS: 1 (Minor magical flux)',
+  'MISHAPS: 2 (Moderate magical flux)',
+  'MISHAPS: 3 (Major magical flux)'
 ]
 
 royaltylookup = {
-    'Sovereign'     => '+1 to all actions, +2 if heart matches',
-    'Nemesis'       => '-1 to all actions, -2 if heart matches',
-    'Defender'      => '+2 to all actions if heart matches',
-    'Apprentice'    => '-1 to all actions if heart matches',
-    'Companion'     => 'Duplicates the effect of the previous card',
-    'Adept'         => '**Play another card on the path**'
+  'Sovereign' => '+1 to all actions, +2 if heart matches',
+  'Nemesis' => '-1 to all actions, -2 if heart matches',
+  'Defender' => '+2 to all actions if heart matches',
+  'Apprentice' => '-1 to all actions if heart matches',
+  'Companion' => 'Duplicates the effect of the previous card',
+  'Adept' => '**Play another card on the path**'
 }
 
 suitlookup = {
-    'S' => 'Secrets',
-    'M' => 'Mysteries',
-    'V' => 'Visions',
-    'N' => 'Notions'
+  'S' => 'Secrets',
+  'M' => 'Mysteries',
+  'V' => 'Visions',
+  'N' => 'Notions'
 }
 
 suitheartlookup = {
-    'S' => 'Galant',
-    'M' => 'Stoic',
-    'V' => 'Empath',
-    'N' => 'Ardent'
+  'S' => 'Galant',
+  'M' => 'Stoic',
+  'V' => 'Empath',
+  'N' => 'Ardent'
 }
 
 sunlookup = [
-    'Silver',
-    'Green',
-    'Blue',
-    'Indigo',
-    'Grey',
-    'Pale',
-    'Red',
-    'Gold',
-    'Invisible'
+  'Silver',
+  'Green',
+  'Blue',
+  'Indigo',
+  'Grey',
+  'Pale',
+  'Red',
+  'Gold',
+  'Invisible'
 ]
 
 path = []
@@ -421,7 +421,7 @@ pathindex = 0
 puts 'Sooth decks loaded.'
 
 bot.message(content: '!help') do |event|
-    help = <<HELP
+  help = <<HELP
 How to use the SoothBot:
 !help - view this message
 !roll - Roll a mundane die
@@ -434,159 +434,174 @@ How to use the SoothBot:
 !shuffle - return all cards to the deck that are not already on the path of suns and shuffle them
 !reset - return all cards to the deck and clear the path of suns
 HELP
-    event.respond help
+  event.respond help
 end
 
 #TODO refactor drawing into a function
 #TODO refactor responses into a function
 bot.message(content: '!card') do |event|
-    card = cardlookup[rand(60)]
-    value = card['card'][0]
-    suit = card['card'][1]
-    event.respond  'A card appears at random.', false, {
-        'title': card['name'],
-        'url': card['url'],
-        'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
-        'image':  {
-            'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
-        }
+  card = cardlookup[rand(60)]
+  value = card['card'][0]
+  suit = card['card'][1]
+  event.respond 'A card appears at random.', false, {
+    'title': card['name'],
+    'url': card['url'],
+    'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
+    'image': {
+      'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
     }
+  }
 end
 
 bot.message(content: '!draw') do |event|
-    if deck.empty?
-        event.respond 'No cards remaining'
-        return
-    end
-    card = deck.shift
-    value = card['card'][0]
-    suit = card['card'][1]
-    puts "Drew card #{ card['id'] }, #{ deck.length } cards remain"
+  if deck.empty?
+    event.respond 'No cards remaining'
+    return
+  end
+  card = deck.shift
+  value = card['card'][0]
+  suit = card['card'][1]
+  puts "Drew card #{ card['id'] }, #{ deck.length } cards remain"
 
-    event.respond  'A card is drawn from the deck.', false, {
-        'title': card['name'],
-        'url': card['url'],
-        'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
-        'image':  {
-            'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
-        }
+  event.respond 'A card is drawn from the deck.', false, {
+    'title': card['name'],
+    'url': card['url'],
+    'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
+    'image': {
+      'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
     }
+  }
 end
 
 #TODO refactor this code, high cognitive complexity
-#BUG stacking 2+ companion cards does not resolve to the active card
 bot.message(content: '!path') do |event|
-    if deck.empty?
-        event.respond 'No cards remaining'
-        return
+  if deck.empty?
+    event.respond 'No cards remaining'
+    return
+  end
+  card = deck.shift
+  puts "Drew card #{ card['id'] }, #{ deck.length } cards remain"
+
+  path[pathindex % sunlookup.length] = card
+
+  response = "A card is drawn from the deck and placed on the #{ sunlookup[pathindex % sunlookup.length] } Sun.\n"
+
+  effectmessage = "\nActive effects:\n"
+
+  # for each sun on the path
+  path.each_with_index do |c, i|
+    value = c['card'][0]
+    suit = c['card'][1]
+
+    # identify the card type of the card that follows this one on the path (or nil)
+    # the purpose of this is to determine if the current card is active due to a companion card
+    #BUG stacking 2+ companion cards does not resolve to the active card
+    nextcard = nil
+    nextindex = (i + 1) % sunlookup.length
+    if path[nextindex] and (nextindex == 8 or nextindex == pathindex % sunlookup.length)
+      nextcard = path[nextindex]['suns']
     end
-    card = deck.shift
-    value = card['card'][0]
-    suit = card['card'][1]
-    puts "Drew card #{ card['id'] }, #{ deck.length } cards remain"
 
-    path[pathindex%sunlookup.length] = card
+    affectinggameplay = 0
+    #   this card is the currently active card
+    #   OR is the invisible sun card
+    #   OR is followed by a companion card
+    if i == pathindex % sunlookup.length or i == 8 or nextcard == 'Companion'
+      puts i
+      if c['suns'] == 'Adept' and i != pathindex % sunlookup.length
+        # do nothing, we have already moved past this adept card
 
-    response = "A card is drawn from the deck and placed on the #{ sunlookup[pathindex%sunlookup.length] } Sun.\n"
+      else
 
-    effectmessage = "\nActive effects:\n"
+        # royal cards update their effect message from the royaltylookup
+        if royaltylookup.has_key? c['suns']
+          effectmessage += "*#{ c['suns'] } effect: #{ royaltylookup[c['suns']] }"
 
-    path.each_with_index do |c, i|
-        value = c['card'][0]
-        suit = c['card'][1]
+          if c['suns'] != 'Companion' and c['suns'] != 'Adept'
+            effectmessage += " (#{ suitheartlookup[suit] })"
+          end
 
-        nextcard = nil
-        nextindex = (i+1)%sunlookup.length
-        if path[nextindex] and (nextindex==8 or nextindex==pathindex%sunlookup.length)
-            nextcard = path[nextindex]['suns']
-        end
+          effectmessage += "*\n"
 
-        if i==pathindex%sunlookup.length or i==8 or nextcard == 'Companion'
-            response += "**#{ sunlookup[i] }**"
-
-            if royaltylookup.has_key? c['suns']
-                effectmessage += "*#{ c['suns'] } effect: #{ royaltylookup[c['suns']] }"
-
-                if c['suns'] != 'Companion' and c['suns'] != 'Adept'
-                    effectmessage += " (#{ suitheartlookup[suit] })"
-                end
-
-                effectmessage += "*\n"
-            else
-                enhdim = "#{ c['suns'].split('/')[0] } #{ c['suns'].split('/')[0]==sunlookup[i] ? '**+2**' : '+1' }"
-
-                if c['suns'] != 'Invisible'
-                    enhdim += ", #{ c['suns'].split('/')[1] } #{ c['suns'].split('/')[1]==sunlookup[i] ? '**-2**' : '-1' }"
-                end
-
-                effectmessage += "*#{ c['suns'] } effect: #{ enhdim }*\n"
-            end
+        # non-royal cards have both skill and magic bonuses
         else
-            response += sunlookup[i]
+          enhdim = "#{ c['suns'].split('/')[0] } #{ c['suns'].split('/')[0] == sunlookup[i] ? '**+2**' : '+1' }"
+
+          # cards affecting the invisible sun do not have any diminished color
+          if c['suns'] != 'Invisible'
+            enhdim += ", #{ c['suns'].split('/')[1] } #{ c['suns'].split('/')[1] == sunlookup[i] ? '**-2**' : '-1' }"
+          end
+
+          effectmessage += "*#{ suitlookup[suit] } effect: +1 to all actions if heart matches (#{ suitheartlookup[suit] })*\n"
+          effectmessage += "*Magic effect: #{ enhdim }*\n"
         end
 
-        response += ": #{ c['name'] } (#{ value } #{ suitlookup[suit] } #{ c['suns'] })\n"
+        affectinggameplay = 1
+      end
     end
 
-    pathindex += 1
+    response += "#{ affectinggameplay == 1 ? '**' : '' }#{ sunlookup[i]}#{ affectinggameplay == 1 ? '**' : '' }: #{ c['name'] } (#{ value } #{ suitlookup[suit] } #{ c['suns'] })\n"
+  end
 
-    event.respond  response+effectmessage, false, {
-        'title': card['name'],
-        'url': card['url'],
-        'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
-        'image':  {
-            'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
-        }
+  pathindex += 1
+
+  event.respond response + effectmessage, false, {
+    'title': card['name'],
+    'url': card['url'],
+    'description': "Value: #{ card['card'][0] }  \nSuit: #{ suitlookup[card['card'][1]] }  \nType: #{ card['suns'] }",
+    'image': {
+      'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
     }
+  }
 end
 
 bot.message(content: '!shuffle') do |event|
-    deck = cardlookup[0..-1].shuffle
-    sortedpath = path[0..-1].sort_by { |v| v['id'] }
-    sortedpath.reverse.each { |card| deck.slice!(card['id'] - 1) }
-    puts "Reset the deck and removed cards still on the path, #{ deck.length } cards remain"
-    event.respond "The path of suns has been reset, and #{ deck.length } cards have been returned and shuffled"
+  deck = cardlookup[0..-1].shuffle
+  sortedpath = path[0..-1].sort_by { |v| v['id'] }
+  sortedpath.reverse.each { |card| deck.slice!(card['id'] - 1) }
+  puts "Reset the deck and removed cards still on the path, #{ deck.length } cards remain"
+  event.respond "The path of suns has been reset, and #{ deck.length } cards have been returned and shuffled"
 end
 
 bot.message(content: '!reset') do |event|
-    deck = cardlookup[0..-1].shuffle
-    path = []
-    pathindex = 0
-    puts "Reset the path and deck, #{ deck.length } cards remain"
-    event.respond "The path of suns has been reset, and #{ deck.length } cards have been returned and shuffled"
+  deck = cardlookup[0..-1].shuffle
+  path = []
+  pathindex = 0
+  puts "Reset the path and deck, #{ deck.length } cards remain"
+  event.respond "The path of suns has been reset, and #{ deck.length } cards have been returned and shuffled"
 end
 
 bot.message(content: '!roll') do |event|
-    result = rand(10)
-    event.respond "Mundane: [ #{ result } ]"
+  result = rand(10)
+  event.respond "Mundane: [ #{ result } ]"
 end
 
 bot.message(content: '!roll2') do |event|
-    result = rand(10)
-    magic = rand(10)
-    mishaps = magic == 0 ? 1 : 0
-    event.respond  "Mundane: [ #{ result } ] Magical: [ #{ magic } ] #{ mishaplookup[mishaps] }"
+  result = rand(10)
+  magic = rand(10)
+  mishaps = magic == 0 ? 1 : 0
+  event.respond "Mundane: [ #{ result } ] Magical: [ #{ magic } ] #{ mishaplookup[mishaps] }"
 end
 
 bot.message(content: '!roll3') do |event|
-    result = rand(10)
-    magic = rand(10)
-    mishaps = magic == 0 ? 1 : 0
-    magic2 = rand(10)
-    mishaps += 1 if magic2 == 0
-    event.respond "Mundane: [ #{ result } ] Magical: [ #{ magic } ] [ #{ magic2 } ] #{ mishaplookup[mishaps] }"
+  result = rand(10)
+  magic = rand(10)
+  mishaps = magic == 0 ? 1 : 0
+  magic2 = rand(10)
+  mishaps += 1 if magic2 == 0
+  event.respond "Mundane: [ #{ result } ] Magical: [ #{ magic } ] [ #{ magic2 } ] #{ mishaplookup[mishaps] }"
 
 end
 
 bot.message(content: '!roll4') do |event|
-    result = rand(10)
-    magic = rand(10)
-    mishaps = magic == 0 ? 1 : 0
-    magic2 = rand(10)
-    mishaps += 1 if magic2 == 0
-    magic3 = rand(10)
-    mishaps += 1 if magic3 == 0
-    event.respond "Mundane: [ #{ result } ] Magical: [ #{ magic } ] [ #{ magic2 } ] [ #{ magic3 } ] #{ mishaplookup[mishaps] }"
+  result = rand(10)
+  magic = rand(10)
+  mishaps = magic == 0 ? 1 : 0
+  magic2 = rand(10)
+  mishaps += 1 if magic2 == 0
+  magic3 = rand(10)
+  mishaps += 1 if magic3 == 0
+  event.respond "Mundane: [ #{ result } ] Magical: [ #{ magic } ] [ #{ magic2 } ] [ #{ magic3 } ] #{ mishaplookup[mishaps] }"
 end
 
 bot.run
