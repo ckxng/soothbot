@@ -8,7 +8,19 @@ bot = Discordrb::Bot.new token: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', client_id
 puts "This bot's invite URL is #{bot.invite_url}."
 puts 'Click on it to invite it to your server.'
 
-deck = <<YAML
+puts 'Loading all-data.yaml from ckxng/invisible-sun-text-processor'
+$isdata = YAML.load(File.open('all-data.yaml', 'r').read)
+# index entries int a list under each file type so we can randomize against it
+$isdata.each do |filetype, _|
+  newlist = []
+  $isdata[filetype].each do |entry, _|
+    newlist += [entry]
+  end
+  $isdata[filetype][:list] = newlist
+end
+
+puts 'Loading basic Sooth Deck metadata'
+$deck = <<YAML
 ---
 -
     id: 1
@@ -371,16 +383,16 @@ deck = <<YAML
     suns: Adept
     url: https://bit.ly/2BNWy7F
 YAML
-cardlookup = YAML.load(deck)
-deck = cardlookup[0..-1].shuffle
-mishaplookup = [
+$cardlookup = YAML.load($deck)
+$deck = $cardlookup[0..-1].shuffle
+$mishaplookup = [
   '',
   'MISHAPS: 1 (Minor magical flux)',
   'MISHAPS: 2 (Moderate magical flux)',
   'MISHAPS: 3 (Major magical flux)'
 ]
 
-royaltylookup = {
+$royaltylookup = {
   'Sovereign' => '+1 to all actions, +2 if heart matches',
   'Nemesis' => '-1 to all actions, -2 if heart matches',
   'Defender' => '+2 to all actions if heart matches',
@@ -389,21 +401,21 @@ royaltylookup = {
   'Adept' => '**Play another card on the path**'
 }
 
-suitlookup = {
+$suitlookup = {
   'S' => 'Secrets',
   'M' => 'Mysteries',
   'V' => 'Visions',
   'N' => 'Notions'
 }
 
-suitheartlookup = {
+$suitheartlookup = {
   'S' => 'Galant',
   'M' => 'Stoic',
   'V' => 'Empath',
   'N' => 'Ardent'
 }
 
-sunlookup = [
+$sunlookup = [
   'Silver',
   'Green',
   'Blue',
@@ -415,19 +427,14 @@ sunlookup = [
   'Invisible'
 ]
 
-path = []
-pathindex = 0
+$path = []
+$pathindex = 0
 
 puts 'Sooth decks loaded.'
 
 bot.message(content: '!help') do |event|
   help = <<HELP
-How to use the SoothBot:
-!help - view this message
-!roll - Roll a mundane die
-!roll2 - Roll a mundane die and one magic die
-!roll3 - Roll a mundane die and two magic die
-!roll4 - Roll a mundane die and three magic die
+Additional commands for SoothBot:
 !card - show a random card
 !draw - deal a random card, removing it from the deck
 !path - deal a card onto the path of suns
@@ -440,13 +447,13 @@ end
 #TODO refactor drawing into a function
 #TODO refactor responses into a function
 bot.message(content: '!card') do |event|
-  card = cardlookup[rand(60)]
+  card = $cardlookup[rand(60)]
   value = card['card'][0]
   suit = card['card'][1]
   event.respond 'A card appears at random.', false, {
     'title': card['name'],
     'url': card['url'],
-    'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
+    'description': "Value: #{ value }  \nSuit: #{ $suitlookup[suit] }  \nType: #{ card['suns'] }",
     'image': {
       'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
     }
@@ -454,19 +461,19 @@ bot.message(content: '!card') do |event|
 end
 
 bot.message(content: '!draw') do |event|
-  if deck.empty?
+  if $deck.empty?
     event.respond 'No cards remaining'
     return
   end
-  card = deck.shift
+  card = $deck.shift
   value = card['card'][0]
   suit = card['card'][1]
-  puts "Drew card #{ card['id'] }, #{ deck.length } cards remain"
+  puts "Drew card #{ card['id'] }, #{ $deck.length } cards remain"
 
   event.respond 'A card is drawn from the deck.', false, {
     'title': card['name'],
     'url': card['url'],
-    'description': "Value: #{ value }  \nSuit: #{ suitlookup[suit] }  \nType: #{ card['suns'] }",
+    'description': "Value: #{ value }  \nSuit: #{ $suitlookup[suit] }  \nType: #{ card['suns'] }",
     'image': {
       'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
     }
@@ -475,21 +482,21 @@ end
 
 #TODO refactor this code, high cognitive complexity
 bot.message(content: '!path') do |event|
-  if deck.empty?
+  if $deck.empty?
     event.respond 'No cards remaining'
     return
   end
-  card = deck.shift
-  puts "Drew card #{ card['id'] }, #{ deck.length } cards remain"
+  card = $deck.shift
+  puts "Drew card #{ card['id'] }, #{ $deck.length } cards remain"
 
-  path[pathindex % sunlookup.length] = card
+  $path[$pathindex % $sunlookup.length] = card
 
-  response = "A card is drawn from the deck and placed on the #{ sunlookup[pathindex % sunlookup.length] } Sun.\n"
+  response = "A card is drawn from the deck and placed on the #{ $sunlookup[$pathindex % $sunlookup.length] } Sun.\n"
 
   effectmessage = "\nActive effects:\n"
 
   # for each sun on the path
-  path.each_with_index do |c, i|
+  $path.each_with_index do |c, i|
     value = c['card'][0]
     suit = c['card'][1]
 
@@ -497,42 +504,42 @@ bot.message(content: '!path') do |event|
     # the purpose of this is to determine if the current card is active due to a companion card
     #BUG stacking 2+ companion cards does not resolve to the active card
     nextcard = nil
-    nextindex = (i + 1) % sunlookup.length
-    if path[nextindex] and (nextindex == 8 or nextindex == pathindex % sunlookup.length)
-      nextcard = path[nextindex]['suns']
+    nextindex = (i + 1) % $sunlookup.length
+    if $path[nextindex] and (nextindex == 8 or nextindex == $pathindex % $sunlookup.length)
+      nextcard = $path[nextindex]['suns']
     end
 
     affectinggameplay = 0
     #   this card is the currently active card
     #   OR is the invisible sun card
     #   OR is followed by a companion card
-    if i == pathindex % sunlookup.length or i == 8 or nextcard == 'Companion'
+    if i == $pathindex % $sunlookup.length or i == 8 or nextcard == 'Companion'
       puts i
-      if c['suns'] == 'Adept' and i != pathindex % sunlookup.length
+      if c['suns'] == 'Adept' and i != $pathindex % $sunlookup.length
         # do nothing, we have already moved past this adept card
 
       else
 
         # royal cards update their effect message from the royaltylookup
-        if royaltylookup.has_key? c['suns']
-          effectmessage += "*#{ c['suns'] } effect: #{ royaltylookup[c['suns']] }"
+        if $royaltylookup.has_key? c['suns']
+          effectmessage += "*#{ c['suns'] } effect: #{ $royaltylookup[c['suns']] }"
 
           if c['suns'] != 'Companion' and c['suns'] != 'Adept'
-            effectmessage += " (#{ suitheartlookup[suit] })"
+            effectmessage += " (#{ $suitheartlookup[suit] })"
           end
 
           effectmessage += "*\n"
 
-        # non-royal cards have both skill and magic bonuses
+          # non-royal cards have both skill and magic bonuses
         else
-          enhdim = "#{ c['suns'].split('/')[0] } #{ c['suns'].split('/')[0] == sunlookup[i] ? '**+2**' : '+1' }"
+          enhdim = "#{ c['suns'].split('/')[0] } #{ c['suns'].split('/')[0] == $sunlookup[i] ? '**+2**' : '+1' }"
 
           # cards affecting the invisible sun do not have any diminished color
           if c['suns'] != 'Invisible'
-            enhdim += ", #{ c['suns'].split('/')[1] } #{ c['suns'].split('/')[1] == sunlookup[i] ? '**-2**' : '-1' }"
+            enhdim += ", #{ c['suns'].split('/')[1] } #{ c['suns'].split('/')[1] == $sunlookup[i] ? '**-2**' : '-1' }"
           end
 
-          effectmessage += "*#{ suitlookup[suit] } effect: +1 to all actions if heart matches (#{ suitheartlookup[suit] })*\n"
+          effectmessage += "*#{ $suitlookup[suit] } effect: +1 to all actions if heart matches (#{ $suitheartlookup[suit] })*\n"
           effectmessage += "*Magic effect: #{ enhdim }*\n"
         end
 
@@ -540,15 +547,15 @@ bot.message(content: '!path') do |event|
       end
     end
 
-    response += "#{ affectinggameplay == 1 ? '**' : '' }#{ sunlookup[i]}#{ affectinggameplay == 1 ? '**' : '' }: #{ c['name'] } (#{ value } #{ suitlookup[suit] } #{ c['suns'] })\n"
+    response += "#{ affectinggameplay == 1 ? '**' : '' }#{ $sunlookup[i]}#{ affectinggameplay == 1 ? '**' : '' }: #{ c['name'] } (#{ value } #{ $suitlookup[suit] } #{ c['suns'] })\n"
   end
 
-  pathindex += 1
+  $pathindex += 1
 
   event.respond response + effectmessage, false, {
     'title': card['name'],
     'url': card['url'],
-    'description': "Value: #{ card['card'][0] }  \nSuit: #{ suitlookup[card['card'][1]] }  \nType: #{ card['suns'] }",
+    'description': "Value: #{ card['card'][0] }  \nSuit: #{ $suitlookup[card['card'][1]] }  \nType: #{ card['suns'] }",
     'image': {
       'url': "https://app.invisiblesunrpg.com/wpsite/wp-content/uploads/2018/04/#{ "%02d" % card['id'] }.png"
     }
@@ -556,52 +563,82 @@ bot.message(content: '!path') do |event|
 end
 
 bot.message(content: '!shuffle') do |event|
-  deck = cardlookup[0..-1].shuffle
-  sortedpath = path[0..-1].sort_by { |v| v['id'] }
-  sortedpath.reverse.each { |card| deck.slice!(card['id'] - 1) }
-  puts "Reset the deck and removed cards still on the path, #{ deck.length } cards remain"
-  event.respond "The path of suns has been reset, and #{ deck.length } cards have been returned and shuffled"
+  $deck = $cardlookup[0..-1].shuffle
+  sortedpath = $path[0..-1].sort_by { |v| v['id'] }
+  sortedpath.reverse.each { |card| $deck.slice!(card['id'] - 1) }
+  puts "Reset the deck and removed cards still on the path, #{ $deck.length } cards remain"
+  event.respond "The path of suns remains, and #{ $deck.length } cards have been returned and shuffled"
 end
 
 bot.message(content: '!reset') do |event|
-  deck = cardlookup[0..-1].shuffle
-  path = []
-  pathindex = 0
-  puts "Reset the path and deck, #{ deck.length } cards remain"
-  event.respond "The path of suns has been reset, and #{ deck.length } cards have been returned and shuffled"
+  $deck = $cardlookup[0..-1].shuffle
+  $path = []
+  $pathindex = 0
+  puts "Reset the path and deck, #{ $deck.length } cards remain"
+  event.respond "The path of suns has been reset, and #{ $deck.length } cards have been returned and shuffled"
 end
 
-bot.message(content: '!roll') do |event|
-  result = rand(10)
-  event.respond "Mundane: [ #{ result } ]"
+def cmd_roll(num, experimental)
+  response = "Mundane: [ #{ rand(10) } ] "
+
+  # roll magical dice if >1
+  mishaps = 0
+  if num and Integer(num) > 1
+    response += "Magical: "
+    (2..Integer(num)).each do |_|
+      roll = rand(10)
+      response += "[ #{ roll } ] "
+      if roll == 0
+        mishaps += 1
+      end
+    end
+    response += $mishaplookup[mishaps]
+  end
+
+  if experimental
+    roll = rand(10)
+    if roll == 0
+      response += " <EXPERIMENTAL FAILURE>"
+    else
+      response += " <Experimental: #{ roll }>"
+    end
+  end
+
+  response
 end
 
-bot.message(content: '!roll2') do |event|
-  result = rand(10)
-  magic = rand(10)
-  mishaps = magic == 0 ? 1 : 0
-  event.respond "Mundane: [ #{ result } ] Magical: [ #{ magic } ] #{ mishaplookup[mishaps] }"
+bot.command(:roll, min_args: 0, max_args: 2, description: 'Roll dice', usage: '!roll [num dice]') do |_event, dice, experimental|
+  cmd_roll dice, experimental
 end
 
-bot.message(content: '!roll3') do |event|
-  result = rand(10)
-  magic = rand(10)
-  mishaps = magic == 0 ? 1 : 0
-  magic2 = rand(10)
-  mishaps += 1 if magic2 == 0
-  event.respond "Mundane: [ #{ result } ] Magical: [ #{ magic } ] [ #{ magic2 } ] #{ mishaplookup[mishaps] }"
-
+bot.command(:r, min_args: 0, max_args: 2, description: 'same as !roll', usage: '!r [num dice]') do |_event, dice, experimental|
+  cmd_roll dice, experimental
 end
 
-bot.message(content: '!roll4') do |event|
-  result = rand(10)
-  magic = rand(10)
-  mishaps = magic == 0 ? 1 : 0
-  magic2 = rand(10)
-  mishaps += 1 if magic2 == 0
-  magic3 = rand(10)
-  mishaps += 1 if magic3 == 0
-  event.respond "Mundane: [ #{ result } ] Magical: [ #{ magic } ] [ #{ magic2 } ] [ #{ magic3 } ] #{ mishaplookup[mishaps] }"
+def cmd_incantation(name)
+  if name == ''
+    name = $isdata['Incantations'][:list][rand($isdata['Incantations'][:list].length)]
+  elsif not $isdata['Incantations'].has_key? name
+    return "Incantation #{ name } is not known"
+  end
+  incantation = $isdata['Incantations'][name]
+
+  response = "Incantation: #{ incantation['Title'] }"
+  ['Level', 'Effect', 'Color', 'Comment'].each do |value|
+    if incantation.has_key? value and incantation[value] != ''
+      response += "\n#{ value }: #{ incantation[value] }"
+    end
+  end
+
+  response
+end
+
+bot.command(:incantation, description: 'Returns the text of an incantation, or a random incantation', usage: '!incantation [NAME OF AN INCANTATION]') do |_event, *args|
+  cmd_incantation args.join(" ").strip.upcase
+end
+
+bot.command(:i, description: 'same as !incantation', usage: '!i [NAME OF AN INCANTATION]') do |_event, *args|
+  cmd_incantation args.join(" ").strip.upcase
 end
 
 bot.run
