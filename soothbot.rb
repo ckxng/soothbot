@@ -432,25 +432,13 @@ $pathindex = 0
 
 puts 'Sooth decks loaded.'
 
-bot.message(content: '!help') do |event|
-  help = <<HELP
-Additional commands for SoothBot:
-!card - show a random card
-!draw - deal a random card, removing it from the deck
-!path - deal a card onto the path of suns
-!shuffle - return all cards to the deck that are not already on the path of suns and shuffle them
-!reset - return all cards to the deck and clear the path of suns
-HELP
-  event.respond help
-end
-
 #TODO refactor drawing into a function
 #TODO refactor responses into a function
-bot.message(content: '!card') do |event|
+bot.command(:card, description: 'Displays a random card', usage: '!card') do |_event|
   card = $cardlookup[rand(60)]
   value = card['card'][0]
   suit = card['card'][1]
-  event.respond 'A card appears at random.', false, {
+  _event.respond 'A card appears at random.', false, {
     'title': card['name'],
     'url': card['url'],
     'description': "Value: #{ value }  \nSuit: #{ $suitlookup[suit] }  \nType: #{ card['suns'] }",
@@ -460,7 +448,7 @@ bot.message(content: '!card') do |event|
   }
 end
 
-bot.message(content: '!draw') do |event|
+bot.command(:draw, description: 'Draw a card from the deck and display it', usage: '!draw') do |_event|
   if $deck.empty?
     event.respond 'No cards remaining'
     return
@@ -470,7 +458,7 @@ bot.message(content: '!draw') do |event|
   suit = card['card'][1]
   puts "Drew card #{ card['id'] }, #{ $deck.length } cards remain"
 
-  event.respond 'A card is drawn from the deck.', false, {
+  _event.respond 'A card is drawn from the deck.', false, {
     'title': card['name'],
     'url': card['url'],
     'description': "Value: #{ value }  \nSuit: #{ $suitlookup[suit] }  \nType: #{ card['suns'] }",
@@ -481,7 +469,7 @@ bot.message(content: '!draw') do |event|
 end
 
 #TODO refactor this code, high cognitive complexity
-bot.message(content: '!path') do |event|
+bot.command(:path, description: 'Draw a card from the deck and place it on the path', usage: '!path') do |_event|
   if $deck.empty?
     event.respond 'No cards remaining'
     return
@@ -552,7 +540,7 @@ bot.message(content: '!path') do |event|
 
   $pathindex += 1
 
-  event.respond response + effectmessage, false, {
+  _event.respond response + effectmessage, false, {
     'title': card['name'],
     'url': card['url'],
     'description': "Value: #{ card['card'][0] }  \nSuit: #{ $suitlookup[card['card'][1]] }  \nType: #{ card['suns'] }",
@@ -562,20 +550,20 @@ bot.message(content: '!path') do |event|
   }
 end
 
-bot.message(content: '!shuffle') do |event|
+bot.command(:shuffle, description: 'Returns cards not currently on the path', usage: '!shuffle') do |_event|
   $deck = $cardlookup[0..-1].shuffle
   sortedpath = $path[0..-1].sort_by { |v| v['id'] }
   sortedpath.reverse.each { |card| $deck.slice!(card['id'] - 1) }
   puts "Reset the deck and removed cards still on the path, #{ $deck.length } cards remain"
-  event.respond "The path of suns remains, and #{ $deck.length } cards have been returned and shuffled"
+  "The path of suns remains, and #{ $deck.length } cards have been returned and shuffled"
 end
 
-bot.message(content: '!reset') do |event|
+bot.command(:reset, description: 'Resets the path of suns and returns all cards', usage: '!reset') do |_event|
   $deck = $cardlookup[0..-1].shuffle
   $path = []
   $pathindex = 0
   puts "Reset the path and deck, #{ $deck.length } cards remain"
-  event.respond "The path of suns has been reset, and #{ $deck.length } cards have been returned and shuffled"
+  "The path of suns has been reset, and #{ $deck.length } cards have been returned and shuffled"
 end
 
 def cmd_roll(num, experimental)
@@ -607,11 +595,7 @@ def cmd_roll(num, experimental)
   response
 end
 
-bot.command(:roll, min_args: 0, max_args: 2, description: 'Roll dice', usage: '!roll [num dice]') do |_event, dice, experimental|
-  cmd_roll dice, experimental
-end
-
-bot.command(:r, min_args: 0, max_args: 2, description: 'same as !roll', usage: '!r [num dice]') do |_event, dice, experimental|
+bot.command(:roll, min_args: 0, max_args: 2, description: 'Roll dice', usage: '!roll [num dice]', aliases: [:r]) do |_event, dice, experimental|
   cmd_roll dice, experimental
 end
 
@@ -633,11 +617,7 @@ def cmd_incantation(name)
   response
 end
 
-bot.command(:incantation, description: 'Returns the text of an incantation, or a random incantation', usage: '!incantation [NAME OF AN INCANTATION]') do |_event, *args|
-  cmd_incantation args.join(" ").strip.upcase
-end
-
-bot.command(:i, description: 'same as !incantation', usage: '!i [NAME OF AN INCANTATION]') do |_event, *args|
+bot.command(:incantation, description: 'Returns the text of an incantation, or a random incantation', usage: '!incantation [NAME OF AN INCANTATION]', aliases: [:i]) do |_event, *args|
   cmd_incantation args.join(" ").strip.upcase
 end
 
