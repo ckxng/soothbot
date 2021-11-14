@@ -432,6 +432,20 @@ $pathindex = 0
 
 puts 'Sooth decks loaded.'
 
+$sections_order = [
+  'Level', 
+  'Form',
+  'Effect', 
+  'Price',
+  'Depletion', 
+  'Effect Depletion',
+  'Object Depletion',
+  'Color', 
+  'Facet', 
+  'Requirements',
+  'Comment'
+]
+
 #TODO refactor drawing into a function
 #TODO refactor responses into a function
 bot.command(:card, description: 'Displays a random card', usage: '!card') do |_event|
@@ -607,8 +621,8 @@ def cmd_incantation(name)
   end
   incantation = $isdata['Incantations'][name]
 
-  response = "Incantation: #{ incantation['Title'] }"
-  ['Level', 'Effect', 'Color', 'Comment'].each do |value|
+  response = "Incantation:\n#{ incantation['Title'] }"
+  $sections_order.each do |value|
     if incantation.has_key? value and incantation[value] != ''
       response += "\n#{ value }: #{ incantation[value] }"
     end
@@ -620,5 +634,72 @@ end
 bot.command(:incantation, description: 'Returns the text of an incantation, or a random incantation', usage: '!incantation [NAME OF AN INCANTATION]', aliases: [:i]) do |_event, *args|
   cmd_incantation args.join(" ").strip.upcase
 end
+
+def cmd_ephemera(name)
+  if name == ''
+    name = $isdata['Ephemera'][:list][rand($isdata['Ephemera'][:list].length)]
+  elsif not $isdata['Ephemera'].has_key? name
+    return "Ephemera #{ name } is not known"
+  end
+  ephemera = $isdata['Ephemera'][name]
+
+  response = "Ephemera:\n#{ ephemera['Title'] }"
+  $sections_order.each do |value|
+    if ephemera.has_key? value and ephemera[value] != ''
+      response += "\n#{ value }: #{ ephemera[value] }"
+    end
+  end
+
+  response
+end
+
+bot.command(:ephemera, description: 'Returns the text of an ephemera, or a random ephemera', usage: '!ephemera [NAME OF AN EPHEMERA]', aliases: [:e]) do |_event, *args|
+  cmd_ephemera args.join(" ").strip.upcase
+end
+
+def cmd_spell(name)
+  if name == ''
+    return "No spell has been summoned"
+  elsif not $isdata['Spells'].has_key? name
+    return "Spell #{ name } is not known"
+  end
+  spell = $isdata['Spells'][name]
+
+  response = "Spell:\n#{ spell['Title'] }"
+  $sections_order.each do |value|
+    if spell.has_key? value and spell[value] != ''
+      response += "\n#{ value }: #{ spell[value] }"
+    end
+  end
+
+  response
+end
+
+bot.command(:spell, description: 'Returns the text of a known spell', usage: '!spell NAME OF A SPELL', aliases: [:s]) do |_event, *args|
+  cmd_spell args.join(" ").strip.upcase
+end
+
+def cmd_forte(name)
+  if name == ''
+    return "No forte ability has been summoned"
+  elsif not $isdata['Forte'].has_key? name
+    return "Forte ability #{ name } is not known"
+  end
+  forte = $isdata['Forte'][name]
+
+  response = "Forte Ability:\n#{ forte['Title'] }"
+  $sections_order.each do |value|
+    if forte.has_key? value and forte[value] != ''
+      response += "\n#{ value }: #{ forte[value] }"
+    end
+  end
+
+  response
+end
+
+bot.command(:forte, description: 'Returns the text of a known forte ability', usage: '!forte NAME OF A FORTE ABILITY', aliases: [:f]) do |_event, *args|
+  cmd_forte args.join(" ").strip.upcase
+end
+
 
 bot.run
